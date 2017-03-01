@@ -1,0 +1,6 @@
+*.pyc
+.idea
+log
+data
+history
+pre_trained

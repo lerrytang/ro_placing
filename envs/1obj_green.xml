@@ -1,0 +1,96 @@
+<mujoco model="desktop">
+    <compiler angle="radian" inertiafromgeom="true" />
+
+    <default>
+        <joint armature="1" damping="1" limited="true" />
+        <geom contype="1" conaffinity='1' friction="1 0.5 0.5" rgba="0.6 0.6 0.6 1" />
+        <motor ctrlrange='-1 1' ctrllimited='true'/>
+    </default>
+
+    <option gravity="0 0 -9.81" integrator="RK4" timestep="0.01" />
+
+    <worldbody>
+        <light pos="0 0 5" dir="0 0 -1" specular="1 1 1"/>
+
+        <!-- Cage -->
+
+        <geom name="floor" pos="0 0 0" size='10 10 10' type="plane" rgba="0 0 0 1"/>
+        <geom name="bottom" pos="0 0 0" size="2 2 0.001" type="box"/>
+        <geom name="top" pos="0 0 2" size="2 2 0.001" type="box" rgba="1 1 1 0"/>
+        <geom name="right" pos="2 0 0" size="0.001 2 2" type="box" rgba="1 1 1 0"/>
+        <geom name="left" pos="-2 0 0" size="0.001 2 2" type="box" rgba="1 1 1 0"/>
+        <geom name="front" pos="0 -2 0" size="2 0.001 2" type="box" rgba="1 1 1 0"/>
+        <geom name="back" pos="0 2 0" size="2 0.001 2" type="box" rgba="1 1 1 0"/>
+
+        <!-- Target Objects -->
+
+        <!--<body name="obj1" pos="0 0 1.1">-->
+            <!--<geom type="box" size="0.3 0.3 0.3" rgba="1 0 0 1"/>-->
+            <!--<joint name="obj1_free" type="free" limited="false"/>-->
+            <!--<body name="obj1_ctrl" pos="=0 0 0">-->
+                <!--<geom type="box" size="0.3 0.3 0.3" rgba="0 0 0 0"/>-->
+                <!--<joint name="obj1_x" axis="1 0 0" type="slide" range="-1 1"/>-->
+                <!--<joint name="obj1_y" axis="0 1 0" type="slide" range="-1 1" />-->
+                <!--<joint name="obj1_z" axis="0 0 1" type="slide" range="-1 1" />-->
+                <!--<joint name="obj1_roll" axis="1 0 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj1_pitch" axis="0 1 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj1_yaw" axis="0 0 1" type="hinge" range="-1 1" />-->
+            <!--</body>-->
+        <!--</body>-->
+
+        <body name="obj2" pos="1 0 1.5">
+            <geom type="box" size="0.2 0.2 0.2" rgba="0 1 0 1"/>
+            <joint name="obj2_free" type="free" limited="false"/>
+            <!--<body name="obj2_ctrl" pos="=0 0 0">-->
+                <!--<geom type="box" size="0.2 0.2 0.2" rgba="0 0 0 0"/>-->
+                <!--<joint name="obj2_x" axis="1 0 0" type="slide" range="-1 1"/>-->
+                <!--<joint name="obj2_y" axis="0 1 0" type="slide" range="-1 1" />-->
+                <!--<joint name="obj2_z" axis="0 0 1" type="slide" range="-1 1" />-->
+                <!--<joint name="obj2_roll" axis="1 0 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj2_pitch" axis="0 1 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj2_yaw" axis="0 0 1" type="hinge" range="-1 1" />-->
+            <!--</body>-->
+        </body>
+
+        <!--<body name="obj3" pos="0 0 1.6">-->
+            <!--<geom type="box" size="0.4 0.2 0.1" rgba="0 0 1 1"/>-->
+            <!--<joint name="obj3_free" type="free" limited="false"/>-->
+            <!--<body name="obj3_ctrl" pos="=0 0 0">-->
+                <!--<geom type="box" size="0.4 0.2 0.1" rgba="0 0 0 0"/>-->
+                <!--<joint name="obj3_x" axis="1 0 0" type="slide" range="-1 1"/>-->
+                <!--<joint name="obj3_y" axis="0 1 0" type="slide" range="-1 1" />-->
+                <!--<joint name="obj3_z" axis="0 0 1" type="slide" range="-1 1" />-->
+                <!--<joint name="obj3_roll" axis="1 0 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj3_pitch" axis="0 1 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj3_yaw" axis="0 0 1" type="hinge" range="-1 1" />-->
+            <!--</body>-->
+        <!--</body>-->
+    </worldbody>
+
+    <!--<actuator>-->
+            <!--&lt;!&ndash; Object 1 &ndash;&gt;-->
+            <!--<motor gear="1000" joint="obj1_x" />-->
+            <!--<motor gear="1000" joint="obj1_y" />-->
+            <!--<motor gear="1000" joint="obj1_z" />-->
+            <!--<motor gear="1000" joint="obj1_roll" />-->
+            <!--<motor gear="1000" joint="obj1_pitch" />-->
+            <!--<motor gear="1000" joint="obj1_yaw" />-->
+
+            <!-- Object 2 -->
+            <!--<motor gear="1000" joint="obj2_x" />-->
+            <!--<motor gear="1000" joint="obj2_y" />-->
+            <!--<motor gear="1000" joint="obj2_z" />-->
+            <!--<motor gear="1000" joint="obj2_roll" />-->
+            <!--<motor gear="1000" joint="obj2_pitch" />-->
+            <!--<motor gear="1000" joint="obj2_yaw" />-->
+        <!--<motor gear="1000" joint="obj2_free" />-->
+
+            <!--&lt;!&ndash; Object 3 &ndash;&gt;-->
+            <!--<motor gear="1000" joint="obj3_x" />-->
+            <!--<motor gear="1000" joint="obj3_y" />-->
+            <!--<motor gear="1000" joint="obj3_z" />-->
+            <!--<motor gear="1000" joint="obj3_roll" />-->
+            <!--<motor gear="1000" joint="obj3_pitch" />-->
+            <!--<motor gear="1000" joint="obj3_yaw" />-->
+    <!--</actuator>-->
+</mujoco>
