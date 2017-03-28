@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import os
 import logging
 logger = logging.getLogger(__name__)
@@ -36,16 +37,12 @@ class TNet:
                                        kernel_size=(8, 8),
                                        strides=(4, 4),
                                        activation=tf.nn.relu,
-                                       # kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                       # kernel_initializer=tf.truncated_normal_initializer(),
                                        name="conv1")
         a1_post_ctrl = tf.layers.conv2d(inputs=self.ob_post_ctrl,
                                         filters=32,
                                         kernel_size=(8, 8),
                                         strides=(4, 4),
                                         activation=tf.nn.relu,
-                                        # kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                        # kernel_initializer=tf.truncated_normal_initializer(),
                                         name="conv1",
                                         reuse=True)
         tf.add_to_collection(name="activation", value=a1_pre_ctrl)
@@ -57,16 +54,12 @@ class TNet:
                                        kernel_size=(4, 4),
                                        strides=(2, 2),
                                        activation=tf.nn.relu,
-                                       # kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                       # kernel_initializer=tf.truncated_normal_initializer(),
                                        name="conv2")
         a2_post_ctrl = tf.layers.conv2d(inputs=a1_post_ctrl,
                                         filters=64,
                                         kernel_size=(4, 4),
                                         strides=(2, 2),
                                         activation=tf.nn.relu,
-                                        # kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                        # kernel_initializer=tf.truncated_normal_initializer(),
                                         name="conv2",
                                         reuse=True)
         tf.add_to_collection(name="activation", value=a2_pre_ctrl)
@@ -94,7 +87,10 @@ class TNet:
         #                       axis=1,
         #                       name="fc1_concat")
 
-        input_size = 9 * 9 * 64
+        logger.info("a2_pre_ctrl.shape={}".format(a2_pre_ctrl.shape))
+        input_size = np.prod(a2_pre_ctrl.get_shape().as_list()[1:])
+        assert input_size == 9 * 9 * 64, "input_size={}, expected={}".format(input_size, 81*64)
+#        input_size = 9 * 9 * 64
         a2_pre_ctrl_flat = tf.reshape(a2_pre_ctrl, shape=[-1, input_size])
         a2_post_ctrl_flat = tf.reshape(a2_post_ctrl, shape=[-1, input_size])
         a2_flat = tf.concat([a2_pre_ctrl_flat,a2_post_ctrl_flat], axis=1)
@@ -102,8 +98,6 @@ class TNet:
         a3 = tf.layers.dense(inputs=a2_flat,
                              units=128,
                              activation=tf.nn.relu,
-                             # kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                             # use_bias=False,
                              name="fc1")
         tf.add_to_collection(name="activation", value=a3)
 
@@ -117,8 +111,6 @@ class TNet:
         self.est_ctrl = tf.layers.dense(inputs=a3,
                                         units=6,
                                         activation=tf.nn.tanh,
-                                        # kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                                        # use_bias=False,
                                         name="est_ctrl")
         tf.add_to_collection(name="activation", value=self.est_ctrl)
 
@@ -224,10 +216,10 @@ class TNet:
             for i, (pre_img, post_img) in enumerate(zip(ob_pre_ctrl_split, ob_post_ctrl_split)):
                 tf.summary.image(name="0_pre_ctrl_" + str(i),
                                  tensor=tf.expand_dims(pre_img, axis=-1),
-                                 max_outputs=3)
+                                 max_outputs=1)
                 tf.summary.image(name="1_post_ctrl_" + str(i),
                                  tensor=tf.expand_dims(post_img, axis=-1),
-                                 max_outputs=3)
+                                 max_outputs=1)
 
         with tf.variable_scope("inverse_model"):
             self.build_inverse_model()
@@ -248,7 +240,7 @@ class TNet:
             # self.inverse_loss = tf.reduce_mean(tf.reduce_sum(tf.abs(self.est_ctrl - self.ctrl), axis=1),
             #                                    name="L1_inverse_loss")
             self.inverse_loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.est_ctrl - self.ctrl), axis=1),
-                                               name="L2_inverse_loss")
+                                               name="inverse_loss")
             self.loss = self.inverse_loss
 
             # add summaries

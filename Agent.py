@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 DB_CAPACITY = 100000
-DB_SAMPLE_PROB = 0.9
+DB_SAMPLE_PROB = 0.0
 
 
 class Agent:
@@ -89,56 +89,14 @@ class Agent:
             # training
             logger.info("Starting pre-training for {} iterations ...".format(max_iter))
             n_iter = 0
+            db_offset = 0
             while n_iter <= max_iter:
 
-                # collect sample from the simulator
-                sample_count = 0
-                ob_pre_ctrl_buffer = np.zeros([batch_size, SCREEN_H, SCREEN_W, self._simulator.frame_skip],
-                                              dtype="float32")
-                ob_post_ctrl_buffer = np.zeros([batch_size, SCREEN_H, SCREEN_W, self._simulator.frame_skip],
-                                               dtype="float32")
-                ctrl_buffer = np.zeros([batch_size, 6], dtype="float32")
-
-                while sample_count < batch_size:
-
-                    if np.random.rand() <= DB_SAMPLE_PROB:
-                        # draw from database
-                        rand_db_idx = np.random.randint(low=0, high=DB_CAPACITY)
-                        ob_pre_ctrl = db_pre_ctrl[rand_db_idx]
-                        ob_pre_ctrl_buffer[sample_count] = self._simulator.transform_imgs(ob_pre_ctrl)
-                        ctrl = db_ctrl[rand_db_idx]
-                        ctrl_buffer[sample_count] = ctrl
-                        ob_post_ctrl = db_post_ctrl[rand_db_idx]
-                        ob_post_ctrl_buffer[sample_count] = self._simulator.transform_imgs(ob_post_ctrl)
-                    else:
-                        # sample from simulator
-                        ob_pre_ctrl, ctrl, ob_post_ctrl = self._rand_act_in_sim(num_obj)
-                        ob_pre_ctrl_buffer[sample_count] = self._simulator.transform_imgs(ob_pre_ctrl)
-                        ctrl_buffer[sample_count] = ctrl
-                        ob_post_ctrl_buffer[sample_count] = self._simulator.transform_imgs(ob_post_ctrl)
-
-                        # save to db
-                        insert_idx = np.random.randint(low=0, high=DB_CAPACITY)
-                        db_pre_ctrl[insert_idx] = ob_pre_ctrl
-                        db_post_ctrl[insert_idx] = ob_post_ctrl
-                        db_ctrl[insert_idx] = ctrl
-                        db_size = np.min([db_size+1, DB_CAPACITY])
-
-                    # logger.info("ob_pre_ctrl==ob_post_ctrl?{}".format(
-                    #     np.all(ob_pre_ctrl_buffer[sample_count]==ob_post_ctrl_buffer[sample_count])))
-                    # logger.info(rand_ctrl)
-                    # import matplotlib.pyplot as plt
-                    # fig, axes = plt.subplots(2, 3)
-                    # for row, imgs in enumerate([ob_pre_ctrl_buffer[sample_count], ob_post_ctrl_buffer[sample_count]]):
-                    #     for col in xrange(3):
-                    #         ax = axes[row, col]
-                    #         ax.imshow(imgs[:,:,col], cmap="gray")
-                    #         ax.set_axis_off()
-                    # plt.show()
-
-                    sample_count += 1
-
                 # train (inverse model only)
+                rand_db_idx = np.random.choice(DB_CAPACITY, size=batch_size, replace=False)
+                ob_pre_ctrl_buffer = self._simulator.transform_imgs(db_pre_ctrl[rand_db_idx])
+                ob_post_ctrl_buffer = self._simulator.transform_imgs(db_post_ctrl[rand_db_idx])
+                ctrl_buffer = db_ctrl[rand_db_idx]
                 loss, summary, est_ctrl, lr, n_iter, _ = sess.run([self._model.loss,
                                                            merged,
                                                            self._model.est_ctrl,
@@ -160,6 +118,18 @@ class Agent:
                                                                                                 db_size))
                     logger.info("diff_ctrl:{}".format(np.mean(est_ctrl - ctrl_buffer, axis=0)))
                     writer.add_summary(summary, global_step=n_iter - 1)
+
+                # sample from simulator
+                if np.random.rand() < DB_SAMPLE_PROB:
+                    logger.info("Sampling from simulator ...")
+                    sample_count = 0
+                    while sample_count < batch_size:
+                        ob_pre_ctrl, ctrl, ob_post_ctrl = self._rand_act_in_sim(num_obj)
+                        db_pre_ctrl[db_offset] = ob_pre_ctrl
+                        db_post_ctrl[db_offset] = ob_post_ctrl
+                        db_ctrl[db_offset] = ctrl
+                        db_offset = (db_offset + 1) % db_size
+                        sample_count += 1
 
                 if n_iter % 5000 == 0:
                     self._model.save_net(model_folder)

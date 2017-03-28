@@ -2,13 +2,11 @@ import numpy as np
 import six
 import cv2
 import matplotlib.pyplot as plt
+from sklearn import preprocessing
 from SimulatorViewer import SimulatorViewer
 import logging
 logger = logging.getLogger(__name__)
 
-DATA_CAPACITY = 1000
-MAX_INTERVAL = 20
-NO_ACT_PROB = 0.1
 
 SCREEN_H = 84
 SCREEN_W = 84
@@ -154,16 +152,19 @@ class Simulator(object):
             self.viewer.loop_once()
             ob = np.copy(self.get_current_scene())
             ob = cv2.resize(cv2.cvtColor(ob, cv2.COLOR_RGB2GRAY), (SCREEN_W, SCREEN_H))
-            self.observation[:-1] = self.observation[1:]
-            self.observation[-1] = np.copy(ob)
+            self.observation[:self.frame_skip-1] = self.observation[1:]
+            self.observation[-1] = ob
 
         return np.copy(self.observation)
 
     def transform_imgs(self, imgs):
-        res = np.zeros_like(imgs, dtype="float32")
-        for id, img in enumerate(imgs):
-            res[id] = img / 255.0
-        res = np.transpose(res, [1, 2, 0])
-        res[:, :, 1:] = np.diff(res, axis=-1)
-        res -= np.mean(res.reshape([-1, self.frame_skip]), axis=0)
+        """
+        Normalize pixel values along each channel
+        """
+        res = imgs.astype("float32") / 255.0
+        res = np.transpose(res, [0, 2, 3, 1])
+        for id, img in enumerate(res):
+            img[:, :, 1:] = np.diff(img, axis=-1)
+            img -= np.mean(img.reshape([SCREEN_W * SCREEN_H, -1]), axis=0, keepdims=True)
+            res[id] = img
         return res
