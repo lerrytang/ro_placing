@@ -16,11 +16,24 @@ class Agent:
 
     def __init__(self, simulator, log_dir=None):
         self._simulator = simulator
-
         self._log_dir = log_dir
-
         self._model = None
         self._model_loaded = False
+
+    def run_sim(self, model_file):
+        logger.info("model_file: {}".format(model_file))
+        self._simulator.agent = self
+        with tf.Session() as sess:
+
+            self.sess = sess
+            self._model = TNet(sess, self._simulator.frame_skip, SCREEN_H, SCREEN_W, 0.0001)
+            self._model.build_net()
+
+            if model_file is not None and os.path.exists(model_file):
+                self._model_loaded = self._model.load_net(model_file)
+                logger.info("Model load: {}".format("Success" if self._model_loaded else "Failed"))
+
+            self._simulator.run_sim()
 
     def pre_train(self, max_iter, batch_size=64, init_lr=0.01, data_file=None, model_file=None):
 
@@ -90,6 +103,7 @@ class Agent:
             logger.info("Starting pre-training for {} iterations ...".format(max_iter))
             n_iter = 0
             db_offset = 0
+            db_modified = False
             while n_iter <= max_iter:
 
                 # train (inverse model only)
@@ -130,21 +144,42 @@ class Agent:
                         db_ctrl[db_offset] = ctrl
                         db_offset = (db_offset + 1) % db_size
                         sample_count += 1
+                    db_modified = True
 
                 if n_iter % 5000 == 0:
                     self._model.save_net(model_folder)
-                    np.savez(pre_train_data_file,
-                             db_pre_ctrl=db_post_ctrl,
-                             db_ctrl=db_ctrl,
-                             db_post_ctrl=db_post_ctrl)
+                    if db_modified:
+                        np.savez(pre_train_data_file,
+                                 db_pre_ctrl=db_post_ctrl,
+                                 db_ctrl=db_ctrl,
+                                 db_post_ctrl=db_post_ctrl)
+                        db_modified = False
 
             # save the pre-trained net
             self._model.save_net(model_folder)
 
     def _rand_act_in_sim(self, num_obj):
-        ob_pre_ctrl = self._simulator.perturb_obj(0, None)
-        selobj = np.random.randint(low=0, high=num_obj) + 1
+        obj_id = np.random.randint(low=0, high=num_obj) + 1
         ctrl = np.random.rand(6) * 2 - 1
-        ob_post_ctrl = self._simulator.perturb_obj(selobj, ctrl)
+        ob_pre_ctrl, ob_post_ctrl = self._manipulate_obj(obj_id, ctrl)
         return ob_pre_ctrl, ctrl, ob_post_ctrl
 
+    def _manipulate_obj(self, obj_id, ctrl):
+        # ob_pre_ctrl = self._simulator.perturb_obj(0, None)
+        ob_pre_ctrl = np.copy(self._simulator.observation)
+        ob_post_ctrl = self._simulator.perturb_obj(obj_id, ctrl)
+        return ob_pre_ctrl, ob_post_ctrl
+
+    def do_placing(self, target_pos):
+        if self._model is None or not self._model_loaded:
+            logger.info("No pre-trained model is loaded, abort.")
+            self._simulator.cont_placing = False
+            return
+
+        ob_pre_ctrl = self._simulator.transform_imgs(self._simulator.observation[np.newaxis, ...])
+        ob_post_ctrl = self._simulator.transform_imgs(target_pos[np.newaxis, ...])
+        assert self.sess is not None
+        ctrl = self.sess.run(self._model.est_ctrl, feed_dict={self._model.ob_pre_ctrl: ob_pre_ctrl,
+                                                         self._model.ob_post_ctrl: ob_post_ctrl})
+        # logger.info("do_placing - ctrl={}".format(ctrl.flatten()))
+        self._manipulate_obj(1, ctrl)

@@ -2,7 +2,6 @@ import numpy as np
 import six
 import cv2
 import matplotlib.pyplot as plt
-from sklearn import preprocessing
 from SimulatorViewer import SimulatorViewer
 import logging
 logger = logging.getLogger(__name__)
@@ -30,6 +29,9 @@ class Simulator(object):
 
         self.observation = np.zeros([self.frame_skip, SCREEN_H, SCREEN_W], dtype="uint8")
         logger.info("observation initialized. shape={}".format(self.observation.shape))
+
+        self.agent = None
+        self.agent_control_mode = False
 
     @property
     def viewer(self):
@@ -135,11 +137,15 @@ class Simulator(object):
         logger.info("Starting simulation ...")
         self.print_help()
         while not self.viewer.should_stop():
-            # simulate
-            self.viewer.advance()
-            self.viewer.model.step()
-            # display
-            self.viewer.loop_once()
+
+            if self.agent_control_mode:
+                self.ro_placing()
+            else:
+                # simulate
+                self.viewer.advance()
+                self.viewer.model.step()
+                # display
+                self.viewer.loop_once()
         logger.info("Goodbye")
 
     def perturb_obj(self, selbody, xfrc):
@@ -168,3 +174,24 @@ class Simulator(object):
             img -= np.mean(img.reshape([SCREEN_W * SCREEN_H, -1]), axis=0, keepdims=True)
             res[id] = img
         return res
+
+    def switch_mode(self):
+        self.agent_control_mode = not self.agent_control_mode
+        logger.info("Control mode: {}".format("Agent" if self.agent_control_mode else "Human"))
+
+    def ro_placing(self):
+        if self.agent is None or self._goal_img is None:
+            logger.info("Either agent or goal image is not defined, abort.")
+            self.switch_mode()
+        else:
+            # get goal frames
+            target_pos = cv2.resize(cv2.cvtColor(self._goal_img, cv2.COLOR_RGB2GRAY), (SCREEN_W, SCREEN_H))
+            target_pos = np.array([target_pos] * self.frame_skip)
+
+            # get current frames
+            num_obj = self.get_num_obj()
+            self.agent._rand_act_in_sim(num_obj)
+
+            while self.agent_control_mode:
+                self.agent.do_placing(target_pos)
+            self.agent._manipulate_obj(1, np.zeros(6))

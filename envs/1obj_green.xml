@@ -38,9 +38,9 @@
             <!--</body>-->
         <!--</body>-->
 
-        <body name="obj2" pos="1 0 1.5">
+        <body name="obj1" pos="1 0 1.5">
             <geom type="box" size="0.2 0.2 0.2" rgba="0 1 0 1"/>
-            <joint name="obj2_free" type="free" limited="false"/>
+            <joint name="obj1_free" type="free" limited="false"/>
             <!--<body name="obj2_ctrl" pos="=0 0 0">-->
                 <!--<geom type="box" size="0.2 0.2 0.2" rgba="0 0 0 0"/>-->
                 <!--<joint name="obj2_x" axis="1 0 0" type="slide" range="-1 1"/>-->

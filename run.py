@@ -26,7 +26,8 @@ def main(args):
                               frame_skip=args.frame_skip,
                               env_path=args.env_path,
                               img_dir=args.img_dir)
-        simulator.run_sim()
+        agent = Agent(simulator, log_dir=args.log_dir)
+        agent.run_sim(model_file=args.model_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

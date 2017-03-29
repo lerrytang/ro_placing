@@ -83,6 +83,8 @@ class SimulatorViewer(mjviewer.MjViewer):
                 self.simulator.display_goal()
             elif key == glfw.KEY_H:
                 self.simulator.print_help()
+            elif key == glfw.KEY_M:
+                self.simulator.switch_mode()
             # elif key in [glfw.KEY_UP, glfw.KEY_DOWN, glfw.KEY_LEFT, glfw.KEY_RIGHT]:
             #     self._perturb = mjPERT_TRANSLATE
             #     axis = 0 if key == glfw.KEY_LEFT or key == glfw.KEY_RIGHT else 1

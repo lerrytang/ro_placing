@@ -52,18 +52,18 @@
             <!--</body>-->
         <!--</body>-->
 
-        <body name="obj3" pos="0 0 1.6">
+        <body name="obj1" pos="0 0 1.6">
             <geom type="box" size="0.4 0.2 0.1" rgba="0 0 1 1"/>
-            <joint name="obj3_free" type="free" limited="false"/>
-            <body name="obj3_ctrl" pos="=0 0 0">
-                <geom type="box" size="0.4 0.2 0.1" rgba="0 0 0 0"/>
-                <joint name="obj3_x" axis="1 0 0" type="slide" range="-1 1"/>
-                <joint name="obj3_y" axis="0 1 0" type="slide" range="-1 1" />
-                <joint name="obj3_z" axis="0 0 1" type="slide" range="-1 1" />
-                <joint name="obj3_roll" axis="1 0 0" type="hinge" range="-1 1" />
-                <joint name="obj3_pitch" axis="0 1 0" type="hinge" range="-1 1" />
-                <joint name="obj3_yaw" axis="0 0 1" type="hinge" range="-1 1" />
-            </body>
+            <joint name="obj1_free" type="free" limited="false"/>
+            <!--<body name="obj3_ctrl" pos="=0 0 0">-->
+                <!--<geom type="box" size="0.4 0.2 0.1" rgba="0 0 0 0"/>-->
+                <!--<joint name="obj3_x" axis="1 0 0" type="slide" range="-1 1"/>-->
+                <!--<joint name="obj3_y" axis="0 1 0" type="slide" range="-1 1" />-->
+                <!--<joint name="obj3_z" axis="0 0 1" type="slide" range="-1 1" />-->
+                <!--<joint name="obj3_roll" axis="1 0 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj3_pitch" axis="0 1 0" type="hinge" range="-1 1" />-->
+                <!--<joint name="obj3_yaw" axis="0 0 1" type="hinge" range="-1 1" />-->
+            <!--</body>-->
         </body>
     </worldbody>
 
@@ -85,11 +85,11 @@
             <!--<motor gear="1000" joint="obj2_yaw" />-->
 
             <!-- Object 3 -->
-            <motor gear="1000" joint="obj3_x" />
-            <motor gear="1000" joint="obj3_y" />
-            <motor gear="1000" joint="obj3_z" />
-            <motor gear="1000" joint="obj3_roll" />
-            <motor gear="1000" joint="obj3_pitch" />
-            <motor gear="1000" joint="obj3_yaw" />
+            <!--<motor gear="1000" joint="obj3_x" />-->
+            <!--<motor gear="1000" joint="obj3_y" />-->
+            <!--<motor gear="1000" joint="obj3_z" />-->
+            <!--<motor gear="1000" joint="obj3_roll" />-->
+            <!--<motor gear="1000" joint="obj3_pitch" />-->
+            <!--<motor gear="1000" joint="obj3_yaw" />-->
     </actuator>
 </mujoco>
