@@ -67,9 +67,9 @@
         <!--</body>-->
     </worldbody>
 
-    <actuator>
+    <!--<actuator>-->
             <!-- Object 1 -->
-        <motor gear="1000" joint="obj1_free" />
+        <!--<motor gear="1000" joint="obj1_free" />-->
             <!--<motor gear="1000" joint="obj1_x" />-->
             <!--<motor gear="1000" joint="obj1_y" />-->
             <!--<motor gear="1000" joint="obj1_z" />-->
@@ -92,5 +92,5 @@
             <!--<motor gear="1000" joint="obj3_roll" />-->
             <!--<motor gear="1000" joint="obj3_pitch" />-->
             <!--<motor gear="1000" joint="obj3_yaw" />-->
-    </actuator>
+    <!--</actuator>-->
 </mujoco>

@@ -1,5 +1,6 @@
 import tensorflow as tf
-from TNet import TNet
+# from TNet import TNet
+from invnet import InverseNet
 import numpy as np
 import time
 import os
@@ -8,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-DB_CAPACITY = 100000
+DB_CAPACITY = 50000
 DB_SAMPLE_PROB = 0.0
 
 
@@ -26,11 +27,14 @@ class Agent:
         with tf.Session() as sess:
 
             self.sess = sess
-            self._model = TNet(sess, self._simulator.frame_skip, SCREEN_H, SCREEN_W, 0.0001)
+            # self._model = TNet(sess, self._simulator.frame_skip, SCREEN_H, SCREEN_W, 0.0001)
+            self._model = InverseNet()
             self._model.build_net()
 
             if model_file is not None and os.path.exists(model_file):
-                self._model_loaded = self._model.load_net(model_file)
+                # self._model_loaded = self._model.load_net(model_file)
+                self._model.model.load_weights(model_file)
+                self._model_loaded = True
                 logger.info("Model load: {}".format("Success" if self._model_loaded else "Failed"))
 
             self._simulator.run_sim()
@@ -161,6 +165,7 @@ class Agent:
     def _rand_act_in_sim(self, num_obj):
         obj_id = np.random.randint(low=0, high=num_obj) + 1
         ctrl = np.random.rand(6) * 2 - 1
+        ctrl[2:] = 0
         ob_pre_ctrl, ob_post_ctrl = self._manipulate_obj(obj_id, ctrl)
         return ob_pre_ctrl, ctrl, ob_post_ctrl
 
@@ -173,13 +178,55 @@ class Agent:
     def do_placing(self, target_pos):
         if self._model is None or not self._model_loaded:
             logger.info("No pre-trained model is loaded, abort.")
-            self._simulator.cont_placing = False
-            return
+            self._simulator.switch_mode()
+        else:
+            # ob_pre_ctrl = self._simulator.transform_imgs(self._simulator.observation[np.newaxis, ...])
+            # ob_post_ctrl = self._simulator.transform_imgs(target_pos[np.newaxis, ...])
 
-        ob_pre_ctrl = self._simulator.transform_imgs(self._simulator.observation[np.newaxis, ...])
-        ob_post_ctrl = self._simulator.transform_imgs(target_pos[np.newaxis, ...])
-        assert self.sess is not None
-        ctrl = self.sess.run(self._model.est_ctrl, feed_dict={self._model.ob_pre_ctrl: ob_pre_ctrl,
-                                                         self._model.ob_post_ctrl: ob_post_ctrl})
-        # logger.info("do_placing - ctrl={}".format(ctrl.flatten()))
-        self._manipulate_obj(1, ctrl)
+            _, ob_pre_ctrl = self._manipulate_obj(1, np.zeros(6))
+            ob_pre_ctrl[1:] = np.diff(ob_pre_ctrl, axis=0)
+            ob_pre_ctrl = np.transpose(ob_pre_ctrl, [1, 2, 0])
+            ob_pre_ctrl = np.expand_dims(ob_pre_ctrl, axis=0)
+            ob_post_ctrl = np.expand_dims(target_pos, axis=0)
+
+            # ob_pre_ctrl = self._simulator.transform_imgs(np.expand_dims(ob_pre_ctrl, axis=0))
+            # ob_post_ctrl= self._simulator.transform_imgs(np.expand_dims(target_pos, axis=0))
+
+            import matplotlib.pyplot as plt
+            fig, axes = plt.subplots(2, 3)
+            for i in xrange(3):
+                axes[0, i].imshow(ob_post_ctrl[0, :,:,i], cmap=plt.cm.gray)
+                axes[1, i].imshow(ob_pre_ctrl[0, :,:,i], cmap=plt.cm.gray)
+            fig.savefig("target.png")
+
+            assert self.sess is not None
+            k = 0
+            while self._simulator.agent_control_mode:
+
+                # ctrl = self.sess.run([self._model.est_ctrl], feed_dict={self._model.ob_pre_ctrl: ob_pre_ctrl,
+                #                                              self._model.ob_post_ctrl: ob_post_ctrl})
+                # ctrl_input = np.copy(ctrl[0].ravel())
+                # print ctrl_input
+                # ctrl_input[2:] = 0.0
+                # print ctrl_input
+                # print "-" * 10
+                ctrl_input = self._model.model.predict([ob_pre_ctrl, ob_post_ctrl])[0]
+                ctrl = np.zeros(6)
+                ctrl[:2] = ctrl_input
+                print ctrl
+                if np.all(np.abs(ctrl_input) < 1e-3):
+                    logger.info("All force and torques are small, abort.")
+                    self._simulator.switch_mode()
+                else:
+                    _, ob_pre_ctrl = self._manipulate_obj(1, ctrl)
+                    ob_pre_ctrl[1:] = np.diff(ob_pre_ctrl, axis=0)
+                    ob_pre_ctrl = np.transpose(ob_pre_ctrl, [1, 2, 0])
+                    ob_pre_ctrl = np.expand_dims(ob_pre_ctrl, axis=0)
+
+                    if k<10 and np.random.rand()>0.5:
+                        fig, axes = plt.subplots(2, 3)
+                        for i in xrange(3):
+                            axes[0, i].imshow(ob_post_ctrl[0, :, :, i], cmap=plt.cm.gray)
+                            axes[1, i].imshow(ob_pre_ctrl[0, :, :, i], cmap=plt.cm.gray)
+                        fig.savefig("process{}.png".format(k))
+                        k += 1

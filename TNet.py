@@ -89,7 +89,7 @@ class TNet:
 
         logger.info("a2_pre_ctrl.shape={}".format(a2_pre_ctrl.shape))
         input_size = np.prod(a2_pre_ctrl.get_shape().as_list()[1:])
-        assert input_size == 9 * 9 * 64, "input_size={}, expected={}".format(input_size, 81*64)
+        # assert input_size == 9 * 9 * 64, "input_size={}, expected={}".format(input_size, 81*64)
 #        input_size = 9 * 9 * 64
         a2_pre_ctrl_flat = tf.reshape(a2_pre_ctrl, shape=[-1, input_size])
         a2_post_ctrl_flat = tf.reshape(a2_post_ctrl, shape=[-1, input_size])
@@ -110,7 +110,7 @@ class TNet:
 
         self.est_ctrl = tf.layers.dense(inputs=a3,
                                         units=6,
-                                        activation=tf.nn.tanh,
+                                        # activation=tf.nn.tanh,
                                         name="est_ctrl")
         tf.add_to_collection(name="activation", value=self.est_ctrl)
 

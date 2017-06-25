@@ -4,3 +4,5 @@ log
 data
 history
 pre_trained
+*.png
+*.h5

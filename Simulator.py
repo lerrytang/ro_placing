@@ -7,8 +7,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-SCREEN_H = 84
-SCREEN_W = 84
+SCREEN_H = 168
+SCREEN_W = 168
 
 
 class Simulator(object):
@@ -152,7 +152,7 @@ class Simulator(object):
 
         for _ in xrange(self.frame_skip):
             start_sim_time = self.viewer.data.time
-            while self.viewer.data.time - start_sim_time < 0.01:
+            while self.viewer.data.time - start_sim_time < 0.1:
                 self.viewer.apply_force_torque(selbody, xfrc)
 
             self.viewer.loop_once()
@@ -185,13 +185,17 @@ class Simulator(object):
             self.switch_mode()
         else:
             # get goal frames
-            target_pos = cv2.resize(cv2.cvtColor(self._goal_img, cv2.COLOR_RGB2GRAY), (SCREEN_W, SCREEN_H))
-            target_pos = np.array([target_pos] * self.frame_skip)
+            target_pos_single = cv2.resize(cv2.cvtColor(self._goal_img, cv2.COLOR_RGB2GRAY), (SCREEN_W, SCREEN_H))
+            target_pos = np.zeros((self.frame_skip,) + target_pos_single.shape)
+            for i in xrange(self.frame_skip):
+                target_pos[i] = np.copy(target_pos_single)
+            target_pos[1:] = np.diff(target_pos, axis=0)
+            target_pos = np.transpose(target_pos, [1, 2, 0])
 
-            # get current frames
-            num_obj = self.get_num_obj()
-            self.agent._rand_act_in_sim(num_obj)
+            # # get current frames
+            # num_obj = self.get_num_obj()
+            # self.agent._rand_act_in_sim(num_obj)
 
-            while self.agent_control_mode:
-                self.agent.do_placing(target_pos)
+            # while self.agent_control_mode:
+            self.agent.do_placing(target_pos)
             self.agent._manipulate_obj(1, np.zeros(6))
